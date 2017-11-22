@@ -135,8 +135,11 @@ angular.module('ngCsv.services').
             var labelArray, labelString;
 
             labelArray = [];
-            angular.forEach(arrData[0], function(value, label) {
-                this.push(that.stringifyField(label, options));
+
+            var iterator = !!options.columnOrder ? options.columnOrder : arrData[0];
+            angular.forEach(iterator, function(value, label) {
+                var val = !!options.columnOrder ? value : label;
+                this.push(that.stringifyField(val, options));
             }, labelArray);
             labelString = labelArray.join(options.fieldSep ? options.fieldSep : ",");
             csvContent += labelString + EOL;
@@ -268,10 +271,16 @@ angular.module('ngCsv.directives').
            */
           $scope.buildCSV = function () {
             var deferred = $q.defer();
+            var data = null;
 
             $element.addClass($attrs.ngCsvLoadingClass || 'ng-csv-loading');
 
-            CSV.stringify($scope.data(), getBuildCsvOptions()).then(function (csv) {
+            data = $scope.data();
+            if(angular.isFunction(data)){
+              data = data();
+            }
+
+            CSV.stringify(data, getBuildCsvOptions()).then(function (csv) {
               $scope.csv = csv;
               $element.removeClass($attrs.ngCsvLoadingClass || 'ng-csv-loading');
               deferred.resolve(csv);
@@ -297,7 +306,7 @@ angular.module('ngCsv.directives').
             var downloadLink = angular.element(downloadContainer.children()[0]);
             downloadLink.attr('href', window.URL.createObjectURL(blob));
             downloadLink.attr('download', scope.getFilename());
-            downloadLink.attr('target', '_blank');
+            // downloadLink.attr('target', '_blank');
 
             $document.find('body').append(downloadContainer);
             $timeout(function () {
